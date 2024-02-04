@@ -1,0 +1,121 @@
+sem_init(&s, 0-> threads/1-> procesos, 4)
+
+en el ejemplo falta hacer 2 waitpids para esperar por los procesos, o lo que es lo mismo, dos wait(NULL)
+
+---------------------------------------------------------------
+
+insert(element E)          |
+element remove();          | seccion critica
+int elements(); // usados  |
+int size(); //max          
+
+mtx_t block;
+cnd_t full,empty;
+int pwait=0;
+
+condicion -> esperar por un cambio en estado compartido hecho por otro thread
+
+cnd_t condicion;
+wait(cnd_t cond, mtx_t m);
+signal(cnd_t cond); //despertar a uno
+broadcast(cnd_t cond); //despertar a todos
+
+PRODUCTOR			CONSUMIDOR
+element = create();		element e;
+				lock(block);
+				while(elements()==0){
+				  wait(empty,block);
+				}
+				e = remove();
+
+while(elements()==size()){	if(pwait > 0){
+  wait(full,block);		  signal(full);
+}				  pwait--;
+  				}
+
+if(elements()==1){
+  broadcast(empty);
+}
+insert(e);			unlock(block);
+unlock(block);			consume(e);
+
+// MEJORA CON SEMAFOROS //
+
+PRODUCTOR			CONSUMIDOR
+
+P(empty);			P(used);
+insert(e);			e = remove(e);
+V(used);			V(empty);
+
+----------------------------------------------------------------------------------------------------
+
+int do_f (void *arg){
+	struct future *fut = arg;
+	void* res = fut->f(fut->arg);
+	lock(fut->done_m);
+	fut->done=true;
+	fut->res = res;
+	broadcast(fut->not_done);
+	unlock(fut->done_m);
+}
+
+void* force(struct future *fut){
+	lock(fut->done_m);
+	if(!fut->done){
+		wait(fut->not_done, fut->done_m);
+	}
+	void *res = fut->res;
+	unlock(fut->done_m);
+	return res;
+}
+
+struct future *promise(void* (*f)(void*), void* arg){
+	struct future *fut=malloc(sizeof(struct future));
+	fut->f = f;
+	fut->arg=arg;
+	fut->done=false;
+	mtx_init(&fut->done_m, mtx_plain);
+	cnd_init(&fut->not_done);
+	thrd_create(&fut->thr,do_f,fut);
+	return fut;
+}
+
+-----------------------------------------------------------------------------------------------
+
+PROBLEMA DE LOS FILOSOFOS A LA MESA
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
